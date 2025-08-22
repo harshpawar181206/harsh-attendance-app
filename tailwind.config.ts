@@ -18,6 +18,14 @@ export default {
 			}
 		},
 		extend: {
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-accent': 'var(--gradient-accent)'
+			},
+			boxShadow: {
+				'card': 'var(--shadow-card)',
+				'calendar': 'var(--shadow-calendar)'
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -26,7 +34,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -51,6 +60,17 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				attendance: {
+					today: 'hsl(var(--attendance-today))',
+					present: 'hsl(var(--attendance-present))',
+					absent: 'hsl(var(--attendance-absent))',
+					partial: 'hsl(var(--attendance-partial))',
+					empty: 'hsl(var(--attendance-empty))'
+				},
+				calendar: {
+					border: 'hsl(var(--calendar-border))',
+					hover: 'hsl(var(--calendar-hover))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
