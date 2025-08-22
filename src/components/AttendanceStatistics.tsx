@@ -165,7 +165,7 @@ export const AttendanceStatistics: React.FC = () => {
 
             <div className="pt-2 border-t">
               <div className="text-sm text-muted-foreground">
-                Target: 85% • Current Month: {format(currentMonth, 'MMMM yyyy')}
+                Target: 75% • Current Month: {format(currentMonth, 'MMMM yyyy')}
               </div>
             </div>
           </CardContent>

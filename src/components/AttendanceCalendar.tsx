@@ -4,18 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
-import { AttendanceRecord, DayLectureConfig, AttendanceStatus, CalendarDay } from '@/types/attendance';
+import { AttendanceRecord, DayLectureConfig, AttendanceStatus, CalendarDay, SubjectConfig } from '@/types/attendance';
 import { AttendanceForm } from './AttendanceForm';
 import { cn } from '@/lib/utils';
 
+const SUBJECTS: { [key: string]: SubjectConfig } = {
+  OOM: { name: 'OOM', fullName: 'Object Oriented Methodology', color: 'bg-blue-500' },
+  SE: { name: 'SE', fullName: 'Software Engineering', color: 'bg-green-500' },
+  DBMS: { name: 'DBMS', fullName: 'Database Management Systems', color: 'bg-purple-500' },
+  NLDS: { name: 'NLDS', fullName: 'Network & Linux for Data Science', color: 'bg-orange-500' },
+  SBC: { name: 'SBC', fullName: 'Smart Business Computing', color: 'bg-pink-500' },
+  MOM: { name: 'MOM', fullName: 'Management & Organization Methods', color: 'bg-teal-500' },
+  IKS: { name: 'IKS', fullName: 'Indian Knowledge Systems', color: 'bg-yellow-500' }
+};
+
 const LECTURE_CONFIG: DayLectureConfig = {
-  0: 0, // Sunday - no lectures
-  1: 4, // Monday - 4 lectures
-  2: 5, // Tuesday - 5 lectures
-  3: 6, // Wednesday - 6 lectures
-  4: 6, // Thursday - 6 lectures
-  5: 4, // Friday - 4 lectures
-  6: 0, // Saturday - no lectures
+  0: { total: 0, subjects: {} }, // Sunday - no lectures
+  1: { total: 4, subjects: { OOM: 1, SE: 1, DBMS: 2 } }, // Monday
+  2: { total: 5, subjects: { OOM: 3, NLDS: 1, SE: 1 } }, // Tuesday  
+  3: { total: 5, subjects: { SBC: 2, DBMS: 1, MOM: 1, NLDS: 1 } }, // Wednesday
+  4: { total: 6, subjects: { NLDS: 3, MOM: 1, OOM: 1, DBMS: 1 } }, // Thursday
+  5: { total: 5, subjects: { IKS: 1, SE: 2, MOM: 1, DBMS: 1 } }, // Friday
+  6: { total: 0, subjects: {} }, // Saturday - no lectures
 };
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -58,9 +68,19 @@ export const AttendanceCalendar: React.FC = () => {
     return 'partial';
   };
 
-  const handleAttendanceSubmit = (date: Date, present: number, total: number) => {
+  const handleAttendanceSubmit = (date: Date, subjectAttendance: { [subject: string]: boolean }) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const newRecord: AttendanceRecord = { date: dateStr, present, total };
+    const dayOfWeek = getDay(date);
+    const dayConfig = LECTURE_CONFIG[dayOfWeek];
+    
+    const presentCount = Object.values(subjectAttendance).filter(Boolean).length;
+    
+    const newRecord: AttendanceRecord = { 
+      date: dateStr, 
+      present: presentCount, 
+      total: dayConfig.total,
+      subjectAttendance 
+    };
     
     setAttendanceRecords(prev => {
       const filtered = prev.filter(r => r.date !== dateStr);
@@ -73,7 +93,7 @@ export const AttendanceCalendar: React.FC = () => {
 
   const handleDateClick = (date: Date) => {
     const dayOfWeek = getDay(date);
-    const totalLectures = LECTURE_CONFIG[dayOfWeek];
+    const totalLectures = LECTURE_CONFIG[dayOfWeek].total;
     
     if (totalLectures === 0) return; // No lectures on this day
     
@@ -96,7 +116,7 @@ export const AttendanceCalendar: React.FC = () => {
     if (!date) return 'invisible';
     
     const dayOfWeek = getDay(date);
-    const totalLectures = LECTURE_CONFIG[dayOfWeek];
+    const totalLectures = LECTURE_CONFIG[dayOfWeek].total;
     const status = getAttendanceStatus(date);
     
     const baseClasses = 'aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all duration-200 border-2';
@@ -192,7 +212,7 @@ export const AttendanceCalendar: React.FC = () => {
               key={index}
               className={getDateClassName(date)}
               onClick={() => date && handleDateClick(date)}
-              disabled={!date || LECTURE_CONFIG[getDay(date)] === 0}
+              disabled={!date || LECTURE_CONFIG[getDay(date)].total === 0}
             >
               {date ? format(date, 'd') : ''}
             </button>
@@ -201,7 +221,7 @@ export const AttendanceCalendar: React.FC = () => {
 
         {/* Attendance Form Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}
@@ -210,7 +230,8 @@ export const AttendanceCalendar: React.FC = () => {
             {selectedDate && (
               <AttendanceForm
                 date={selectedDate}
-                totalLectures={LECTURE_CONFIG[getDay(selectedDate)]}
+                dayConfig={LECTURE_CONFIG[getDay(selectedDate)]}
+                subjects={SUBJECTS}
                 existingRecord={attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd'))}
                 onSubmit={handleAttendanceSubmit}
                 onCancel={() => setIsDialogOpen(false)}
