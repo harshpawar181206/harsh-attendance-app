@@ -3,6 +3,7 @@ export interface AttendanceRecord {
   present: number;
   total: number;
   subjectAttendance?: { [subject: string]: boolean }; // Track individual subjects
+  lectureAttendance?: { [lectureId: string]: boolean }; // Track individual lectures
 }
 
 export interface DayLectureConfig {

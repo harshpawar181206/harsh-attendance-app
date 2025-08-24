@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { AttendanceRecord, DayLectureConfig, AttendanceStatus, CalendarDay, SubjectConfig } from '@/types/attendance';
 import { AttendanceForm } from './AttendanceForm';
+import { RealTimeClock } from './RealTimeClock';
 import { cn } from '@/lib/utils';
 
 const SUBJECTS: { [key: string]: SubjectConfig } = {
@@ -68,21 +69,29 @@ export const AttendanceCalendar: React.FC = () => {
     return 'partial';
   };
 
-  const handleAttendanceSubmit = (date: Date, subjectAttendance: { [subject: string]: boolean }) => {
+  const handleAttendanceSubmit = (date: Date, lectureAttendance: { [lectureId: string]: boolean }) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayOfWeek = getDay(date);
     const dayConfig = LECTURE_CONFIG[dayOfWeek];
     
-    // Calculate total lectures attended (not just subjects)
-    const presentCount = Object.entries(subjectAttendance)
-      .filter(([subject, isPresent]) => isPresent)
-      .reduce((total, [subject]) => total + dayConfig.subjects[subject], 0);
+    // Calculate total lectures attended
+    const presentCount = Object.values(lectureAttendance).filter(Boolean).length;
+    
+    // Convert lecture attendance back to subject attendance for compatibility
+    const subjectAttendance: { [subject: string]: boolean } = {};
+    Object.keys(dayConfig.subjects).forEach(subject => {
+      // A subject is marked present if ANY of its lectures are attended
+      const subjectLectures = Object.entries(lectureAttendance)
+        .filter(([lectureId]) => lectureId.startsWith(subject + '-'));
+      subjectAttendance[subject] = subjectLectures.some(([, isPresent]) => isPresent);
+    });
     
     const newRecord: AttendanceRecord = { 
       date: dateStr, 
       present: presentCount, 
       total: dayConfig.total,
-      subjectAttendance 
+      subjectAttendance,
+      lectureAttendance 
     };
     
     setAttendanceRecords(prev => {
@@ -151,10 +160,13 @@ export const AttendanceCalendar: React.FC = () => {
     <Card className="w-full max-w-4xl mx-auto shadow-calendar bg-gradient-accent">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6 text-primary" />
-            Attendance Calendar
-          </CardTitle>
+          <div className="flex flex-col gap-2">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <CalendarIcon className="h-6 w-6 text-primary" />
+              Attendance Calendar
+            </CardTitle>
+            <RealTimeClock />
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -224,10 +236,13 @@ export const AttendanceCalendar: React.FC = () => {
 
         {/* Attendance Form Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>
-                Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}
+              <DialogTitle className="flex items-center justify-between">
+                <span>Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}</span>
+                {selectedDate && attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd')) && (
+                  <span className="text-sm text-muted-foreground">(Editing saved attendance)</span>
+                )}
               </DialogTitle>
             </DialogHeader>
             {selectedDate && (

@@ -5,12 +5,16 @@ import { Label } from '@/components/ui/label';
 import { AttendanceRecord, SubjectConfig } from '@/types/attendance';
 import { Check, X } from 'lucide-react';
 
+interface LectureAttendance {
+  [lectureId: string]: boolean;
+}
+
 interface AttendanceFormProps {
   date: Date;
   dayConfig: { total: number; subjects: { [subject: string]: number } };
   subjects: { [key: string]: SubjectConfig };
   existingRecord?: AttendanceRecord;
-  onSubmit: (date: Date, subjectAttendance: { [subject: string]: boolean }) => void;
+  onSubmit: (date: Date, lectureAttendance: LectureAttendance) => void;
   onCancel: () => void;
 }
 
@@ -22,49 +26,72 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onSubmit,
   onCancel
 }) => {
-  const [subjectAttendance, setSubjectAttendance] = useState<{ [subject: string]: boolean }>({});
+  const [lectureAttendance, setLectureAttendance] = useState<LectureAttendance>({});
+
+  // Generate individual lectures
+  const generateLectures = () => {
+    const lectures: { id: string; subject: string; lectureNumber: number }[] = [];
+    Object.entries(dayConfig.subjects).forEach(([subject, count]) => {
+      for (let i = 1; i <= count; i++) {
+        lectures.push({
+          id: `${subject}-${i}`,
+          subject,
+          lectureNumber: i
+        });
+      }
+    });
+    return lectures;
+  };
+
+  const lectures = generateLectures();
 
   useEffect(() => {
-    // Initialize subject attendance based on existing record or all false
-    const initialAttendance: { [subject: string]: boolean } = {};
+    // Initialize lecture attendance based on existing record or all false
+    const initialAttendance: LectureAttendance = {};
     
-    Object.keys(dayConfig.subjects).forEach(subject => {
-      initialAttendance[subject] = existingRecord?.subjectAttendance?.[subject] || false;
+    lectures.forEach(lecture => {
+      // If we have existing lecture attendance, use that; otherwise fall back to subject attendance
+      if (existingRecord?.lectureAttendance) {
+        initialAttendance[lecture.id] = existingRecord.lectureAttendance[lecture.id] || false;
+      } else {
+        // Convert from subject-based to lecture-based attendance
+        initialAttendance[lecture.id] = existingRecord?.subjectAttendance?.[lecture.subject] || false;
+      }
     });
     
-    setSubjectAttendance(initialAttendance);
+    setLectureAttendance(initialAttendance);
   }, [dayConfig, existingRecord]);
 
-  const toggleSubject = (subject: string) => {
-    setSubjectAttendance(prev => ({
+  const toggleLecture = (lectureId: string) => {
+    setLectureAttendance(prev => ({
       ...prev,
-      [subject]: !prev[subject]
+      [lectureId]: !prev[lectureId]
     }));
   };
 
   const handleSubmit = () => {
-    onSubmit(date, subjectAttendance);
+    onSubmit(date, lectureAttendance);
   };
 
   const setAllPresent = () => {
-    const allPresent: { [subject: string]: boolean } = {};
-    Object.keys(dayConfig.subjects).forEach(subject => {
-      allPresent[subject] = true;
+    const allPresent: LectureAttendance = {};
+    lectures.forEach(lecture => {
+      allPresent[lecture.id] = true;
     });
-    setSubjectAttendance(allPresent);
+    setLectureAttendance(allPresent);
   };
 
   const setAllAbsent = () => {
-    const allAbsent: { [subject: string]: boolean } = {};
-    Object.keys(dayConfig.subjects).forEach(subject => {
-      allAbsent[subject] = false;
+    const allAbsent: LectureAttendance = {};
+    lectures.forEach(lecture => {
+      allAbsent[lecture.id] = false;
     });
-    setSubjectAttendance(allAbsent);
+    setLectureAttendance(allAbsent);
   };
 
-  const presentCount = Object.values(subjectAttendance).filter(Boolean).length;
-  const totalSubjects = Object.keys(dayConfig.subjects).length;
-  const percentage = totalSubjects > 0 ? (presentCount / totalSubjects) * 100 : 0;
+  const presentCount = Object.values(lectureAttendance).filter(Boolean).length;
+  const totalLectures = lectures.length;
+  const percentage = totalLectures > 0 ? (presentCount / totalLectures) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -92,34 +119,38 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
         </Button>
       </div>
 
-      {/* Subject Grid */}
+      {/* Individual Lectures Grid */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">
-          Mark attendance for each subject ({presentCount}/{totalSubjects})
+          Mark attendance for each lecture ({presentCount}/{totalLectures})
         </Label>
         
-        <div className="grid grid-cols-1 gap-3">
-          {Object.entries(dayConfig.subjects).map(([subject, count]) => (
+        <div className="grid grid-cols-2 gap-3">
+          {lectures.map((lecture) => (
             <button
-              key={subject}
+              key={lecture.id}
               type="button"
-              onClick={() => toggleSubject(subject)}
+              onClick={() => toggleLecture(lecture.id)}
               className={`
-                p-4 rounded-lg border-2 transition-all duration-200 font-medium text-left
-                ${subjectAttendance[subject]
-                  ? 'bg-attendance-present text-white border-attendance-present shadow-md'
-                  : 'bg-background border-calendar-border hover:bg-calendar-hover'
+                p-3 rounded-lg border-2 transition-all duration-200 font-medium text-left
+                ${lectureAttendance[lecture.id]
+                  ? 'bg-green-500 text-white border-green-500 shadow-md'
+                  : 'bg-background border-border hover:bg-accent'
                 }
               `}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">{subject}</div>
-                  <div className="text-sm opacity-75">{subjects[subject]?.fullName}</div>
-                  <div className="text-xs opacity-60">{count} lecture{count > 1 ? 's' : ''}</div>
+                  <div className="font-semibold">{lecture.subject}</div>
+                  <div className="text-xs opacity-75">
+                    Lecture {lecture.lectureNumber}
+                  </div>
+                  <div className="text-xs opacity-60">
+                    {subjects[lecture.subject]?.fullName}
+                  </div>
                 </div>
-                {subjectAttendance[subject] && (
-                  <Check className="h-5 w-5" />
+                {lectureAttendance[lecture.id] && (
+                  <Check className="h-4 w-4" />
                 )}
               </div>
             </button>
@@ -135,7 +166,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
               {percentage.toFixed(1)}%
             </div>
             <div className="text-sm text-muted-foreground">
-              {presentCount} out of {totalSubjects} subjects attended
+              {presentCount} out of {totalLectures} lectures attended
             </div>
             <div className={`text-sm font-medium ${
               percentage === 100 ? 'text-attendance-present' : 
@@ -164,7 +195,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
           onClick={handleSubmit}
           className="flex-1 bg-gradient-primary"
         >
-          Save Attendance
+          Save Today
         </Button>
       </div>
     </div>
