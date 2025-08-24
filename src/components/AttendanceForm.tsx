@@ -181,22 +181,27 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          className="flex-1"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          className="flex-1 bg-gradient-primary"
-        >
-          Save Today
-        </Button>
+      <div className="sticky bottom-0 bg-background pt-4 mt-6 border-t">
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            className="flex-1 bg-gradient-primary hover:opacity-90 text-white font-semibold"
+          >
+            💾 Save Today
+          </Button>
+        </div>
+        <div className="text-xs text-muted-foreground text-center mt-2">
+          You can edit this day's attendance anytime by clicking on the date again
+        </div>
       </div>
     </div>
   );

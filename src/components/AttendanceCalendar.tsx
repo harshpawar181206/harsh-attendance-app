@@ -236,25 +236,32 @@ export const AttendanceCalendar: React.FC = () => {
 
         {/* Attendance Form Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <span>Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}</span>
-                {selectedDate && attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd')) && (
-                  <span className="text-sm text-muted-foreground">(Editing saved attendance)</span>
-                )}
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="sticky top-0 bg-background z-10 pb-4">
+              <DialogTitle className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span>Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}</span>
+                  {selectedDate && attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd')) && (
+                    <span className="text-sm text-green-600 font-medium">✓ Previously Saved (Click to Edit)</span>
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Select individual lectures to mark as present. Unselected lectures will be marked as absent.
+                </div>
               </DialogTitle>
             </DialogHeader>
-            {selectedDate && (
-              <AttendanceForm
-                date={selectedDate}
-                dayConfig={LECTURE_CONFIG[getDay(selectedDate)]}
-                subjects={SUBJECTS}
-                existingRecord={attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd'))}
-                onSubmit={handleAttendanceSubmit}
-                onCancel={() => setIsDialogOpen(false)}
-              />
-            )}
+            <div className="space-y-4">
+              {selectedDate && (
+                <AttendanceForm
+                  date={selectedDate}
+                  dayConfig={LECTURE_CONFIG[getDay(selectedDate)]}
+                  subjects={SUBJECTS}
+                  existingRecord={attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd'))}
+                  onSubmit={handleAttendanceSubmit}
+                  onCancel={() => setIsDialogOpen(false)}
+                />
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>
