@@ -73,7 +73,10 @@ export const AttendanceCalendar: React.FC = () => {
     const dayOfWeek = getDay(date);
     const dayConfig = LECTURE_CONFIG[dayOfWeek];
     
-    const presentCount = Object.values(subjectAttendance).filter(Boolean).length;
+    // Calculate total lectures attended (not just subjects)
+    const presentCount = Object.entries(subjectAttendance)
+      .filter(([subject, isPresent]) => isPresent)
+      .reduce((total, [subject]) => total + dayConfig.subjects[subject], 0);
     
     const newRecord: AttendanceRecord = { 
       date: dateStr, 
