@@ -19,11 +19,50 @@ export const AttendanceStatistics: React.FC = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [currentMonth] = useState(new Date());
 
+  // Listen for changes in localStorage
   useEffect(() => {
-    const savedRecords = localStorage.getItem('attendanceRecords');
-    if (savedRecords) {
-      setAttendanceRecords(JSON.parse(savedRecords));
-    }
+    const loadRecords = () => {
+      const savedRecords = localStorage.getItem('attendanceRecords');
+      if (savedRecords) {
+        setAttendanceRecords(JSON.parse(savedRecords));
+      }
+    };
+
+    // Initial load
+    loadRecords();
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'attendanceRecords') {
+        loadRecords();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen for focus events to catch same-tab updates
+    const handleFocus = () => {
+      loadRecords();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Check for updates every second (fallback)
+    const interval = setInterval(loadRecords, 1000);
+
+    // Listen for custom attendance update events for immediate updates
+    const handleAttendanceUpdate = (e: CustomEvent) => {
+      setAttendanceRecords(e.detail);
+    };
+
+    window.addEventListener('attendanceUpdated', handleAttendanceUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('attendanceUpdated', handleAttendanceUpdate as EventListener);
+      clearInterval(interval);
+    };
   }, []);
 
   // Calculate overall statistics

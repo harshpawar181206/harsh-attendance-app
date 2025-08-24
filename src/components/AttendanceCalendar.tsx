@@ -96,7 +96,12 @@ export const AttendanceCalendar: React.FC = () => {
     
     setAttendanceRecords(prev => {
       const filtered = prev.filter(r => r.date !== dateStr);
-      return [...filtered, newRecord];
+      const updated = [...filtered, newRecord];
+      
+      // Trigger a custom event to immediately update statistics
+      window.dispatchEvent(new CustomEvent('attendanceUpdated', { detail: updated }));
+      
+      return updated;
     });
     
     setIsDialogOpen(false);
