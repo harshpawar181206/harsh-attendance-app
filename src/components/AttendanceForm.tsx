@@ -89,6 +89,10 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     setLectureAttendance(allAbsent);
   };
 
+  const handleRedo = () => {
+    setAllAbsent(); // Reset all lectures to absent (false)
+  };
+
   const presentCount = Object.values(lectureAttendance).filter(Boolean).length;
   const totalLectures = lectures.length;
   const percentage = totalLectures > 0 ? (presentCount / totalLectures) * 100 : 0;
@@ -182,7 +186,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
 
       {/* Action Buttons */}
       <div className="sticky bottom-0 bg-background pt-4 mt-6 border-t">
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Button
             type="button"
             variant="outline"
@@ -190,6 +194,14 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
             className="flex-1"
           >
             Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleRedo}
+            className="flex-1"
+          >
+            🔄 Redo
           </Button>
           <Button
             type="button"

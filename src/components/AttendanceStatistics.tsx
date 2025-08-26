@@ -163,7 +163,7 @@ export const AttendanceStatistics: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Perfect Days</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Present Days</p>
                 <p className="text-2xl font-bold">{fullAttendanceDays}</p>
               </div>
               <Award className="h-8 w-8 text-primary" />
