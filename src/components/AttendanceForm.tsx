@@ -65,7 +65,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const toggleLecture = (lectureId: string) => {
     setLectureAttendance(prev => ({
       ...prev,
-      [lectureId]: !prev[lectureId]
+      [lectureId]: prev[lectureId] === true ? false : true
     }));
   };
 
