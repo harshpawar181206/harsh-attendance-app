@@ -15,6 +15,7 @@ interface AttendanceFormProps {
   subjects: { [key: string]: SubjectConfig };
   existingRecord?: AttendanceRecord;
   onSubmit: (date: Date, lectureAttendance: LectureAttendance) => void;
+  onDelete: (date: Date) => void;
   onCancel: () => void;
 }
 
@@ -24,6 +25,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   subjects,
   existingRecord,
   onSubmit,
+  onDelete,
   onCancel
 }) => {
   const [lectureAttendance, setLectureAttendance] = useState<LectureAttendance>({});
@@ -96,9 +98,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     setLectureAttendance(allAbsent);
   };
 
-  const handleRedo = () => {
-    // Reset all lectures to unmarked/neutral state (empty object)
-    setLectureAttendance({});
+  const handleDelete = () => {
+    onDelete(date);
   };
 
   const presentCount = Object.values(lectureAttendance).filter(Boolean).length;
@@ -208,10 +209,10 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
           <Button
             type="button"
             variant="destructive"
-            onClick={handleRedo}
+            onClick={handleDelete}
             className="flex-1"
           >
-            🔄 Redo
+            🗑️ Delete Today
           </Button>
           <Button
             type="button"

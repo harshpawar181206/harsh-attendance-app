@@ -108,6 +108,25 @@ export const AttendanceCalendar: React.FC = () => {
     setSelectedDate(null);
   };
 
+  const handleAttendanceDelete = (date: Date) => {
+    const dateKey = format(date, 'yyyy-MM-dd');
+    
+    setAttendanceRecords(prev => {
+      const updated = prev.filter(r => r.date !== dateKey);
+      
+      // Save to localStorage immediately
+      localStorage.setItem('attendanceRecords', JSON.stringify(updated));
+      
+      // Trigger a custom event to immediately update statistics
+      window.dispatchEvent(new CustomEvent('attendanceUpdated', { detail: updated }));
+      
+      return updated;
+    });
+    
+    setIsDialogOpen(false);
+    setSelectedDate(null);
+  };
+
   const handleDateClick = (date: Date) => {
     const dayOfWeek = getDay(date);
     const totalLectures = LECTURE_CONFIG[dayOfWeek].total;
@@ -258,13 +277,14 @@ export const AttendanceCalendar: React.FC = () => {
             <div className="space-y-4">
               {selectedDate && (
                 <AttendanceForm
-                  date={selectedDate}
-                  dayConfig={LECTURE_CONFIG[getDay(selectedDate)]}
-                  subjects={SUBJECTS}
-                  existingRecord={attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd'))}
-                  onSubmit={handleAttendanceSubmit}
-                  onCancel={() => setIsDialogOpen(false)}
-                />
+                   date={selectedDate}
+                   dayConfig={LECTURE_CONFIG[getDay(selectedDate)]}
+                   subjects={SUBJECTS}
+                   existingRecord={attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd'))}
+                   onSubmit={handleAttendanceSubmit}
+                   onDelete={handleAttendanceDelete}
+                   onCancel={() => setIsDialogOpen(false)}
+                 />
               )}
             </div>
           </DialogContent>
