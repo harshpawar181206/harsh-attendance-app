@@ -90,7 +90,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   };
 
   const handleRedo = () => {
-    setAllAbsent(); // Reset all lectures to absent (false)
+    // Reset all lectures to unmarked/neutral state (empty object)
+    setLectureAttendance({});
   };
 
   const presentCount = Object.values(lectureAttendance).filter(Boolean).length;
