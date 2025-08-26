@@ -63,10 +63,17 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   }, [dayConfig, existingRecord]);
 
   const toggleLecture = (lectureId: string) => {
-    setLectureAttendance(prev => ({
-      ...prev,
-      [lectureId]: prev[lectureId] === true ? false : true
-    }));
+    setLectureAttendance(prev => {
+      const currentValue = prev[lectureId];
+      // Cycle: undefined -> true -> false -> true -> false...
+      if (currentValue === undefined) {
+        return { ...prev, [lectureId]: true };
+      } else if (currentValue === true) {
+        return { ...prev, [lectureId]: false };
+      } else {
+        return { ...prev, [lectureId]: true };
+      }
+    });
   };
 
   const handleSubmit = () => {
@@ -138,8 +145,10 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
               onClick={() => toggleLecture(lecture.id)}
               className={`
                 p-3 rounded-lg border-2 transition-all duration-200 font-medium text-left
-                ${lectureAttendance[lecture.id]
+                ${lectureAttendance[lecture.id] === true
                   ? 'bg-green-500 text-white border-green-500 shadow-md'
+                  : lectureAttendance[lecture.id] === false
+                  ? 'bg-red-500 text-white border-red-500 shadow-md'
                   : 'bg-background border-border hover:bg-accent'
                 }
               `}
