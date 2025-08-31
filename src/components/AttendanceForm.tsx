@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AttendanceRecord, SubjectConfig } from '@/types/attendance';
-import { Check, X } from 'lucide-react';
+import { Check, X, Save, Trash2, RotateCcw } from 'lucide-react';
 
 interface LectureAttendance {
   [lectureId: string]: boolean;
@@ -98,133 +98,146 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     setLectureAttendance(allAbsent);
   };
 
-  const handleDelete = () => {
-    onDelete(date);
+  const getPresentCount = () => {
+    return Object.values(lectureAttendance).filter(Boolean).length;
   };
 
-  const presentCount = Object.values(lectureAttendance).filter(Boolean).length;
-  const totalLectures = lectures.length;
-  const percentage = totalLectures > 0 ? (presentCount / totalLectures) * 100 : 0;
+  const getAbsentCount = () => {
+    return Object.values(lectureAttendance).filter(value => value === false).length;
+  };
+
+  const getUnmarkedCount = () => {
+    return Object.values(lectureAttendance).filter(value => value === undefined).length;
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Quick Actions */}
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={setAllPresent}
-          className="flex-1"
-        >
-          <Check className="h-4 w-4 mr-1" />
-          All Present
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={setAllAbsent}
-          className="flex-1"
-        >
-          <X className="h-4 w-4 mr-1" />
-          All Absent
-        </Button>
-      </div>
-
-      {/* Individual Lectures Grid */}
-      <div className="space-y-3">
-        <Label className="text-base font-semibold">
-          Mark attendance for each lecture ({presentCount}/{totalLectures})
-        </Label>
+    <div className="space-y-6 animate-fade-in">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="card-hover bg-gradient-accent">
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-attendance-present text-shadow">{getPresentCount()}</div>
+            <div className="text-sm text-muted-foreground font-medium">Present</div>
+          </CardContent>
+        </Card>
         
-        <div className="grid grid-cols-2 gap-3">
-          {lectures.map((lecture) => (
-            <button
-              key={lecture.id}
-              type="button"
-              onClick={() => toggleLecture(lecture.id)}
-              className={`
-                p-3 rounded-lg border-2 transition-all duration-200 font-medium text-left
-                ${lectureAttendance[lecture.id] === true
-                  ? 'bg-green-500 text-white border-green-500 shadow-md'
-                  : lectureAttendance[lecture.id] === false
-                  ? 'bg-red-500 text-white border-red-500 shadow-md'
-                  : 'bg-background border-border hover:bg-accent'
-                }
-              `}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">{lecture.subject}</div>
-                  <div className="text-xs opacity-75">
-                    Lecture {lecture.lectureNumber}
-                  </div>
-                  <div className="text-xs opacity-60">
-                    {subjects[lecture.subject]?.fullName}
-                  </div>
-                </div>
-                {lectureAttendance[lecture.id] && (
-                  <Check className="h-4 w-4" />
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+        <Card className="card-hover bg-gradient-accent">
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-attendance-absent text-shadow">{getAbsentCount()}</div>
+            <div className="text-sm text-muted-foreground font-medium">Absent</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="card-hover bg-gradient-accent">
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-muted-foreground text-shadow-sm">{getUnmarkedCount()}</div>
+            <div className="text-sm text-muted-foreground font-medium">Unmarked</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Summary */}
-      <Card className="bg-gradient-accent">
-        <CardContent className="p-4">
-          <div className="text-center space-y-2">
-            <div className="text-2xl font-bold">
-              {percentage.toFixed(1)}%
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {presentCount} out of {totalLectures} lectures attended
-            </div>
-            <div className={`text-sm font-medium ${
-              percentage === 100 ? 'text-attendance-present' : 
-              percentage === 0 ? 'text-attendance-absent' : 
-              'text-attendance-partial'
-            }`}>
-              {percentage === 100 ? 'Full Attendance' :
-               percentage === 0 ? 'Absent' : 'Partial Attendance'}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          onClick={setAllPresent}
+          variant="outline"
+          size="sm"
+          className="button-hover hover:bg-attendance-present hover:text-white transition-all duration-300 font-semibold"
+        >
+          <Check className="h-4 w-4 mr-2" />
+          Mark All Present
+        </Button>
+        
+        <Button
+          onClick={setAllAbsent}
+          variant="outline"
+          size="sm"
+          className="button-hover hover:bg-attendance-absent hover:text-white transition-all duration-300 font-semibold"
+        >
+          <X className="h-4 w-4 mr-2" />
+          Mark All Absent
+        </Button>
+      </div>
+
+      {/* Lectures Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {lectures.map((lecture, index) => {
+          const isPresent = lectureAttendance[lecture.id];
+          const subjectConfig = subjects[lecture.subject];
+          
+          return (
+            <Card 
+              key={lecture.id} 
+              className={`card-hover cursor-pointer transition-all duration-300 ${
+                isPresent === true 
+                  ? 'ring-2 ring-attendance-present bg-attendance-present/10' 
+                  : isPresent === false 
+                  ? 'ring-2 ring-attendance-absent bg-attendance-absent/10'
+                  : 'ring-2 ring-muted-foreground/30'
+              }`}
+              onClick={() => toggleLecture(lecture.id)}
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <div className={`w-3 h-3 rounded-full ${subjectConfig.color} mr-2`}></div>
+                  <span className="font-semibold text-sm">{lecture.subject}</span>
+                </div>
+                
+                <div className="text-lg font-bold mb-2 text-shadow-sm">
+                  Lecture {lecture.lectureNumber}
+                </div>
+                
+                <div className="flex items-center justify-center">
+                  {isPresent === true && (
+                    <Check className="h-6 w-6 text-attendance-present animate-bounce-in" />
+                  )}
+                  {isPresent === false && (
+                    <X className="h-6 w-6 text-attendance-absent animate-bounce-in" />
+                  )}
+                  {isPresent === undefined && (
+                    <div className="w-6 h-6 border-2 border-muted-foreground/30 rounded-full"></div>
+                  )}
+                </div>
+                
+                <div className="text-xs text-muted-foreground mt-2 font-medium">
+                  {isPresent === true ? 'Present' : isPresent === false ? 'Absent' : 'Click to mark'}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Action Buttons */}
-      <div className="sticky bottom-0 bg-background pt-4 mt-6 border-t">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap gap-3 justify-end pt-4 border-t">
+        {existingRecord && (
           <Button
-            type="button"
+            onClick={() => onDelete(date)}
             variant="outline"
-            onClick={onCancel}
-            className="flex-1"
+            className="button-hover hover:bg-destructive hover:text-white transition-all duration-300 font-semibold"
           >
-            Cancel
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Record
           </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={handleDelete}
-            className="flex-1"
-          >
-            🗑️ Delete Today
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            className="flex-1 bg-gradient-primary hover:opacity-90 text-white font-semibold"
-          >
-            💾 Save Today
-          </Button>
-        </div>
-        <div className="text-xs text-muted-foreground text-center mt-2">
-          You can edit this day's attendance anytime by clicking on the date again
-        </div>
+        )}
+        
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="button-hover font-semibold"
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Cancel
+        </Button>
+        
+        <Button
+          onClick={handleSubmit}
+          className="button-hover bg-primary hover:bg-primary/90 text-white font-semibold"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          Save Attendance
+        </Button>
       </div>
     </div>
   );

@@ -8,9 +8,10 @@ import { AttendanceRecord, DayLectureConfig, AttendanceStatus, CalendarDay, Subj
 import { AttendanceForm } from './AttendanceForm';
 import { RealTimeClock } from './RealTimeClock';
 import { cn } from '@/lib/utils';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const SUBJECTS: { [key: string]: SubjectConfig } = {
-  OOM: { name: 'OOM', fullName: 'Object Oriented Methodology', color: 'bg-blue-500' },
+  OOM: { name: 'OOM', fullName: 'Object Oriented Methodology', color: 'bg-black dark:bg-white' },
   SE: { name: 'SE', fullName: 'Software Engineering', color: 'bg-green-500' },
   DBMS: { name: 'DBMS', fullName: 'Database Management Systems', color: 'bg-purple-500' },
   NLDS: { name: 'NLDS', fullName: 'Network & Linux for Data Science', color: 'bg-orange-500' },
@@ -36,6 +37,9 @@ export const AttendanceCalendar: React.FC = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Scroll animation hook
+  const { elementRef: calendarRef, isVisible: calendarVisible } = useScrollAnimation<HTMLDivElement>();
 
   // Load attendance records from localStorage on mount
   useEffect(() => {
@@ -98,6 +102,9 @@ export const AttendanceCalendar: React.FC = () => {
       const filtered = prev.filter(r => r.date !== dateStr);
       const updated = [...filtered, newRecord];
       
+      // Save to localStorage immediately
+      localStorage.setItem('attendanceRecords', JSON.stringify(updated));
+      
       // Trigger a custom event to immediately update statistics
       window.dispatchEvent(new CustomEvent('attendanceUpdated', { detail: updated }));
       
@@ -155,18 +162,18 @@ export const AttendanceCalendar: React.FC = () => {
     const totalLectures = LECTURE_CONFIG[dayOfWeek].total;
     const status = getAttendanceStatus(date);
     
-    const baseClasses = 'aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all duration-200 border-2';
+    const baseClasses = 'aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all duration-300 border-2 calendar-day-hover';
     
     if (totalLectures === 0) {
       return cn(baseClasses, 'text-muted-foreground border-transparent cursor-not-allowed opacity-50');
     }
     
     const statusClasses = {
-      today: 'bg-attendance-today text-white border-attendance-today shadow-md hover:bg-primary-glow cursor-pointer',
-      present: 'bg-attendance-present text-white border-attendance-present hover:opacity-80 cursor-pointer',
-      absent: 'bg-attendance-absent text-white border-attendance-absent hover:opacity-80 cursor-pointer',
-      partial: 'bg-attendance-partial text-white border-attendance-partial hover:opacity-80 cursor-pointer',
-      empty: 'bg-attendance-empty border-calendar-border hover:bg-calendar-hover cursor-pointer'
+      today: 'bg-attendance-today text-white border-attendance-today shadow-lg hover:shadow-xl cursor-pointer hover:scale-110',
+      present: 'bg-attendance-present text-white border-attendance-present hover:opacity-90 cursor-pointer hover:scale-105',
+      absent: 'bg-attendance-absent text-white border-attendance-absent hover:opacity-90 cursor-pointer hover:scale-105',
+      partial: 'bg-attendance-partial text-white border-attendance-partial hover:opacity-90 cursor-pointer hover:scale-105',
+      empty: 'bg-attendance-empty border-calendar-border hover:bg-calendar-hover cursor-pointer hover:scale-105'
     };
     
     return cn(baseClasses, statusClasses[status]);
@@ -181,12 +188,15 @@ export const AttendanceCalendar: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-calendar bg-gradient-accent">
+    <Card 
+      ref={calendarRef}
+      className={`w-full max-w-4xl mx-auto shadow-calendar bg-gradient-accent card-hover scroll-animate-scale ${calendarVisible ? 'animate-in' : ''}`}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-2">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <CalendarIcon className="h-6 w-6 text-primary" />
+            <CardTitle className="text-2xl font-bold flex items-center gap-2 text-gradient text-shadow">
+              <CalendarIcon className="h-6 w-6 text-primary animate-pulse" />
               Attendance Calendar
             </CardTitle>
             <RealTimeClock />
@@ -196,18 +206,18 @@ export const AttendanceCalendar: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => navigateMonth('prev')}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 button-hover"
             >
               ←
             </Button>
-            <h3 className="font-semibold text-lg min-w-[140px] text-center">
+            <h3 className="font-semibold text-lg min-w-[140px] text-center text-shadow-sm">
               {format(currentDate, 'MMMM yyyy')}
             </h3>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigateMonth('next')}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 button-hover"
             >
               →
             </Button>
@@ -217,30 +227,34 @@ export const AttendanceCalendar: React.FC = () => {
       
       <CardContent className="space-y-4">
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-attendance-today"></div>
-            <span>Today</span>
+        <div className="flex flex-wrap gap-4 text-sm p-4 bg-muted/30 rounded-lg">
+          <div className="flex items-center gap-2 hover:scale-105 transition-transform">
+            <div className="w-4 h-4 rounded bg-attendance-today shadow-sm"></div>
+            <span className="font-medium">Today</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-attendance-present"></div>
-            <span>Full Attendance</span>
+          <div className="flex items-center gap-2 hover:scale-105 transition-transform">
+            <div className="w-4 h-4 rounded bg-attendance-present shadow-sm"></div>
+            <span className="font-medium">Full Attendance</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-attendance-partial"></div>
-            <span>Partial Attendance</span>
+          <div className="flex items-center gap-2 hover:scale-105 transition-transform">
+            <div className="w-4 h-4 rounded bg-attendance-partial shadow-sm"></div>
+            <span className="font-medium">Partial Attendance</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-attendance-absent"></div>
-            <span>Absent</span>
+          <div className="flex items-center gap-2 hover:scale-105 transition-transform">
+            <div className="w-4 h-4 rounded bg-attendance-absent shadow-sm"></div>
+            <span className="font-medium">Absent</span>
           </div>
         </div>
 
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-2">
           {/* Day headers */}
-          {DAYS_OF_WEEK.map(day => (
-            <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+          {DAYS_OF_WEEK.map((day, index) => (
+            <div 
+              key={day} 
+              className="text-center text-sm font-semibold text-muted-foreground py-2 animate-fade-in text-shadow-sm"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
               {day}
             </div>
           ))}
@@ -252,6 +266,7 @@ export const AttendanceCalendar: React.FC = () => {
               className={getDateClassName(date)}
               onClick={() => date && handleDateClick(date)}
               disabled={!date || LECTURE_CONFIG[getDay(date)].total === 0}
+              style={{ animationDelay: `${index * 0.02}s` }}
             >
               {date ? format(date, 'd') : ''}
             </button>
@@ -260,16 +275,16 @@ export const AttendanceCalendar: React.FC = () => {
 
         {/* Attendance Form Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto animate-scale-in">
             <DialogHeader className="sticky top-0 bg-background z-10 pb-4">
               <DialogTitle className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span>Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}</span>
+                  <span className="font-semibold">Mark Attendance for {selectedDate && format(selectedDate, 'MMMM d, yyyy')}</span>
                   {selectedDate && attendanceRecords.find(r => r.date === format(selectedDate, 'yyyy-MM-dd')) && (
                     <span className="text-sm text-green-600 font-medium">✓ Previously Saved (Click to Edit)</span>
                   )}
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   Select individual lectures to mark as present. Unselected lectures will be marked as absent.
                 </div>
               </DialogTitle>
